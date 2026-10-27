@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface-base text-ink-primary font-sans antialiased;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-ink-primary;
+    line-height: 1.2;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-brand-primary ring-offset-2 ring-offset-surface-base;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-primary text-white hover:bg-brand-hover;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface-base text-ink-primary border border-line hover:bg-surface-secondary;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-secondary hover:bg-surface-secondary;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface-base px-3.5 py-2.5 text-sm text-ink-primary placeholder:text-ink-secondary/70 transition-colors focus:border-brand-primary focus:ring-1 focus:ring-brand-primary;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-ink-primary mb-1.5;
+  }
+
+  .card {
+    @apply rounded-xl border border-line bg-surface-base shadow-card;
+  }
+}
