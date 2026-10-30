@@ -6,7 +6,7 @@ export default function GeneralInfoPage() {
   const { data, updateData } = useListingWizard();
   return (
     <ListingWizardLayout step={2} title="Cuéntanos sobre tu alojamiento" subtitle="Esta información ayudará a los viajeros a conocerte mejor.">
-      <div className="space-y-6">
+      <div className="space-y-5">
         <Input
           label="Título del anuncio"
           name="listing-name"
@@ -26,7 +26,7 @@ export default function GeneralInfoPage() {
             value={data.description}
             onChange={(event) => updateData('description', event.target.value)}
             placeholder="Describe tu alojamiento, lo que lo hace especial y para qué tipo de viajeros es ideal."
-            className="input min-h-40 resize-y"
+            className="input min-h-32 resize-y"
           />
           <p className="mt-1.5 text-right text-xs text-ink-secondary">{data.description.length}/500</p>
         </div>

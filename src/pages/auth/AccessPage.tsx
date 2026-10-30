@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { AlertCircle, Apple, ArrowRight, Home, Mail, Menu, UserRound } from 'lucide-react';
+import { AlertCircle, Apple, ArrowRight, Home, Lock, Mail, Menu, UserRound } from 'lucide-react';
 import { useDemoAuth } from '@/hooks/useDemoAuth';
+import { ApiError } from '@/api/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -9,34 +10,47 @@ export default function AccessPage() {
   const { session, login } = useDemoAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   if (session) return <Navigate to="/host" replace />;
 
-  const continueDemo = (value: string) => {
-    if (!value.trim()) {
+  const continueLogin = async (mail: string, clave: string) => {
+    if (!mail.trim()) {
       setError('Ingresa tu correo electrónico para continuar.');
       return;
     }
+    if (!clave) {
+      setError('Ingresa tu contraseña.');
+      return;
+    }
     setError(null);
-    login(value.trim());
-    navigate('/host');
+    setLoading(true);
+    try {
+      await login(mail.trim(), clave);
+      navigate('/host');
+    } catch (err) {
+      const mensaje =
+        err instanceof ApiError
+          ? err.message
+          : 'No se pudo iniciar sesión. Verifica correo y contraseña.';
+      setError(mensaje);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    continueDemo(email);
-  };
-
-  const handleSocialDemo = (provider: string) => {
-    continueDemo(`${provider}@aloja-te.bo`);
+    void continueLogin(email, contrasena);
   };
 
   return (
     <div className="min-h-screen bg-[linear-gradient(120deg,#f8fbff_0%,#dceeff_48%,#75aef7_100%)] text-ink-primary">
       <header className="h-[74px] border-b border-slate-200/80 bg-white/95">
-        <div className="mx-auto flex h-full max-w-[1320px] items-center justify-between px-6 sm:px-10">
-          <a href="/acceso" className="flex items-center gap-2.5" aria-label="Aloja-Te inicio">
+        <div className="flex h-full w-full items-center justify-between px-5 sm:px-8 lg:px-12">
+          <a href="/acceso" className="flex shrink-0 items-center gap-2.5" aria-label="Aloja-Te inicio">
             <span className="relative flex h-10 w-10 items-center justify-center text-brand-primary">
               <Home className="h-10 w-10 stroke-[2.5]" />
               <span className="absolute top-[15px] flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-primary text-white">
@@ -45,7 +59,7 @@ export default function AccessPage() {
             </span>
             <span className="text-[27px] font-bold tracking-[-0.04em] text-brand-primary">Aloja-Te</span>
           </a>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <button aria-label="Perfil" className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-ink-primary transition hover:bg-brand-light hover:text-brand-primary">
               <UserRound className="h-5 w-5" />
             </button>
@@ -57,7 +71,7 @@ export default function AccessPage() {
       </header>
 
       <main className="flex min-h-[calc(100vh-74px)] items-center justify-center px-4 py-12 sm:px-6">
-        <section className="w-full max-w-[534px] -translate-y-12 scale-[0.675] origin-center rounded-[26px] bg-white px-6 py-10 shadow-[0_20px_45px_rgba(35,91,160,0.16)] sm:px-8 sm:py-12">
+        <section className="w-full max-w-[534px] origin-center rounded-[26px] bg-white px-6 py-10 shadow-[0_20px_45px_rgba(35,91,160,0.16)] sm:px-8 sm:py-12">
           <div className="mx-auto max-w-[466px] text-center">
             <div className="flex items-center justify-center gap-2 text-brand-primary">
               <span className="relative flex h-12 w-12 items-center justify-center">
@@ -68,20 +82,31 @@ export default function AccessPage() {
               </span>
               <span className="text-[34px] font-bold tracking-[-0.05em]">Aloja-Te</span>
             </div>
-            <h1 className="mt-8 text-[28px] font-bold tracking-[-0.03em] text-[#14295a] sm:text-[30px]">Inicia sesión o regístrate</h1>
-            <p className="mt-2 text-[17px] text-[#8ba1c5]">Te damos la bienvenida a Aloja-Te</p>
+            <h1 className="mt-8 text-[28px] font-bold tracking-[-0.03em] text-[#14295a] sm:text-[30px]">Inicia sesión</h1>
+            <p className="mt-2 text-[17px] text-[#8ba1c5]">Usa tu cuenta verificada de Aloja-Te</p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4 text-left">
               <Input
-                aria-label="Número de teléfono o correo electrónico"
+                aria-label="Correo electrónico"
                 type="email"
                 name="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Número de teléfono o correo electrónico"
+                placeholder="Correo electrónico"
                 leftIcon={<Mail className="h-5 w-5" />}
                 className="h-[58px] rounded-xl border-[#b9c9e1] px-4 text-[16px] placeholder:text-[#7184a7]"
                 autoComplete="email"
+              />
+              <Input
+                aria-label="Contraseña"
+                type="password"
+                name="password"
+                value={contrasena}
+                onChange={(event) => setContrasena(event.target.value)}
+                placeholder="Contraseña"
+                leftIcon={<Lock className="h-5 w-5" />}
+                className="h-[58px] rounded-xl border-[#b9c9e1] px-4 text-[16px] placeholder:text-[#7184a7]"
+                autoComplete="current-password"
               />
 
               {error && (
@@ -91,8 +116,15 @@ export default function AccessPage() {
                 </div>
               )}
 
-              <Button type="submit" fullWidth size="lg" rightIcon={<ArrowRight className="h-5 w-5" />} className="h-[54px] rounded-xl bg-[#2376f2] text-[17px] shadow-[0_7px_14px_rgba(35,118,242,0.2)] hover:bg-brand-hover">
-                Continuar
+              <Button
+                type="submit"
+                fullWidth
+                size="lg"
+                disabled={loading}
+                rightIcon={<ArrowRight className="h-5 w-5" />}
+                className="h-[54px] rounded-xl bg-[#2376f2] text-[17px] shadow-[0_7px_14px_rgba(35,118,242,0.2)] hover:bg-brand-hover"
+              >
+                {loading ? 'Ingresando…' : 'Continuar'}
               </Button>
             </form>
 
@@ -103,11 +135,19 @@ export default function AccessPage() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <button onClick={() => handleSocialDemo('google')} className="flex h-[58px] items-center justify-center gap-3 rounded-xl border border-[#cbd7e8] bg-white text-[14px] font-semibold text-slate-900 transition hover:border-brand-primary hover:bg-brand-light">
+              <button
+                type="button"
+                disabled
+                className="flex h-[58px] cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-[#cbd7e8] bg-white text-[14px] font-semibold text-slate-400"
+              >
                 <span className="text-xl font-bold text-[#4285f4]">G</span>
                 Continuar con Google
               </button>
-              <button onClick={() => handleSocialDemo('apple')} className="flex h-[58px] items-center justify-center gap-3 rounded-xl border border-[#cbd7e8] bg-white text-[14px] font-semibold text-slate-900 transition hover:border-brand-primary hover:bg-brand-light">
+              <button
+                type="button"
+                disabled
+                className="flex h-[58px] cursor-not-allowed items-center justify-center gap-3 rounded-xl border border-[#cbd7e8] bg-white text-[14px] font-semibold text-slate-400"
+              >
                 <Apple className="h-5 w-5 fill-current" />
                 Continuar con Apple
               </button>

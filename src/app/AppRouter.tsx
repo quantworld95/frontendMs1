@@ -22,65 +22,106 @@ export default function AppRouter() {
       <DemoAuthProvider>
         <ListingWizardProvider>
           <Routes>
-          <Route path="/" element={<Navigate to="/host" replace />} />
-          <Route path="/acceso" element={<AccessPage />} />
-          <Route
-            path="/host"
-            element={
-              <ProtectedRoute>
-                <HostHomePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host/listings"
-            element={
-              <ProtectedRoute>
-                <ListingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host/listings/:listingId"
-            element={<ProtectedRoute><ListingDetailPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-1"
-            element={<ProtectedRoute><ListingTypePage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/:listingId/rooms/new"
-            element={<ProtectedRoute><RoomTypeWizardPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/:listingId/rooms/:roomId"
-            element={<ProtectedRoute><RoomTypeDetailPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-2"
-            element={<ProtectedRoute><GeneralInfoPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-3"
-            element={<ProtectedRoute><LocationPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-4"
-            element={<ProtectedRoute><AmenitiesPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-5"
-            element={<ProtectedRoute><FeaturesPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-6"
-            element={<ProtectedRoute><PricingPage /></ProtectedRoute>}
-          />
-          <Route
-            path="/host/listings/new/step-7"
-            element={<ProtectedRoute><PhotosPage /></ProtectedRoute>}
-          />
-          <Route path="*" element={<Navigate to="/host" replace />} />
+            <Route path="/" element={<Navigate to="/host" replace />} />
+            <Route path="/acceso" element={<AccessPage />} />
+            <Route
+              path="/host"
+              element={
+                <ProtectedRoute>
+                  <HostHomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings"
+              element={
+                <ProtectedRoute>
+                  <ListingsPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Rutas estáticas del wizard ANTES de :listingId (evita que "new" se tome como id). */}
+            <Route
+              path="/host/listings/new/step-1"
+              element={
+                <ProtectedRoute>
+                  <ListingTypePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/new/step-2"
+              element={
+                <ProtectedRoute>
+                  <GeneralInfoPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/new/step-3"
+              element={
+                <ProtectedRoute>
+                  <LocationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/new/step-4"
+              element={
+                <ProtectedRoute>
+                  <AmenitiesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/new/step-5"
+              element={
+                <ProtectedRoute>
+                  <FeaturesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/new/step-6"
+              element={
+                <ProtectedRoute>
+                  <PricingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/new/step-7"
+              element={
+                <ProtectedRoute>
+                  <PhotosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/:listingId/rooms/new"
+              element={
+                <ProtectedRoute>
+                  <RoomTypeWizardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/:listingId/rooms/:roomId"
+              element={
+                <ProtectedRoute>
+                  <RoomTypeDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/listings/:listingId"
+              element={
+                <ProtectedRoute>
+                  <ListingDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/host" replace />} />
           </Routes>
         </ListingWizardProvider>
       </DemoAuthProvider>

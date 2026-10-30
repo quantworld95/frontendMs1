@@ -10,6 +10,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/alojamientos': { target: 'http://localhost:8081', changeOrigin: true },
+      '/catalogos-alojamiento': { target: 'http://localhost:8081', changeOrigin: true },
+      '/sesiones': { target: 'http://localhost:8081', changeOrigin: true },
+    },
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

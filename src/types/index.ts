@@ -1,5 +1,20 @@
-// Capa de tipos de Aloja-Te.
-// Esta carpeta centralizará los modelos de dominio (propiedades, establecimientos,
-// tipos de habitación, etc.) en las siguientes etapas. Se mantiene vacía intencionalmente
-// para reservar la estructura sin adelantar módulos fuera del alcance actual.
-export {};
+export type {
+  AgregarUnidadRequest,
+  AlojamientoDetalle,
+  AlojamientoResumen,
+  ApiErrorBody,
+  CatalogoItem,
+  CatalogosAlojamiento,
+  FotoRequest,
+  FotografiaAlojamiento,
+  FotografiasRequest,
+  OfertaUnicaRequest,
+  PoliticasRequest,
+  PresentacionRequest,
+  RegistroAlojamientoRequest,
+  ServicioAlojamiento,
+  ServicioCatalogo,
+  ServiciosRequest,
+  UbicacionRequest,
+  UnidadAlojamiento,
+} from '@/types/alojamientos';

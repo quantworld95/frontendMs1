@@ -8,7 +8,7 @@ export default function HotelConditionsPage() {
   const { data, updateData } = useListingWizard();
   const establishmentLabel = data.type === 'Hostal' ? 'hostal' : 'hotel';
 
-  return <ListingWizardLayout step={5} title={`Define las políticas de tu ${establishmentLabel}`} subtitle="Estas condiciones aplicarán a todas las habitaciones del establecimiento.">
+  return <ListingWizardLayout step={5} title={`Define las políticas de tu ${establishmentLabel}`} subtitle="Se guardan en ms-01 con PUT /alojamientos/{id}/politicas.">
     <div className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div><label htmlFor="hotel-check-in" className="label">Hora de entrada (check-in) <span className="text-brand-primary">*</span></label><select id="hotel-check-in" className="input" value={data.checkIn} onChange={(event) => updateData('checkIn', event.target.value)}>{checkInTimes.map((time) => <option key={time}>{time}</option>)}</select></div>

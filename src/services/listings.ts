@@ -1,4 +1,26 @@
 import type { ListingStatus, ListingWizardData } from '@/hooks/useListingWizard';
+import type { AlojamientoDetalle, AlojamientoResumen, UnidadAlojamiento } from '@/types/alojamientos';
+
+export interface DetailUnit {
+  id: string;
+  name: string;
+  capacity: number;
+  bedrooms: number;
+  beds: number;
+  bathrooms: number;
+  inventory: number;
+  price: string;
+  status: string;
+  photo?: string;
+  description?: string;
+}
+
+export interface DetailPhoto {
+  id: string;
+  identificadorAlmacen: string;
+  url: string;
+  orden: number;
+}
 
 export interface DetailListing {
   id: string;
@@ -12,6 +34,8 @@ export interface DetailListing {
   address: string;
   description: string;
   photos: string[];
+  /** Metadatos completos para poder eliminar en Cloudinary vía API. */
+  photoItems: DetailPhoto[];
   guests: number;
   beds: number;
   bathrooms: number;
@@ -25,45 +49,221 @@ export interface DetailListing {
   cancellation: string;
   stayConditions?: string;
   amenities: string[];
+  /** Ids de `alojamiento_servicio` para reeditar el wizard. */
+  servicioIds: number[];
   category: 'Casa' | 'Departamento' | 'Hotel' | 'Hostal';
   roomsLabel: string;
   ratingLabel: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  departamento?: string | null;
+  estadoApi?: string;
+  politicas?: string | null;
+  units?: DetailUnit[];
 }
 
-export const staticListings: Record<string, DetailListing> = {
-  '1': {
-    id: '1', name: 'Hotel Sol del Valle', type: 'Hotel', status: 'Publicado', location: 'Centro, Santa Cruz', country: 'Bolivia', city: 'Santa Cruz de la Sierra', neighborhood: 'Centro', address: 'Centro, Santa Cruz de la Sierra', description: 'Hotel céntrico con habitaciones cómodas y servicios completos para una estadía placentera.', photos: ['https://images.pexels.com/photos/34168189/pexels-photo-34168189.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'], guests: 2, beds: 1, bathrooms: 1, bedrooms: 1, price: '180', weeklyDiscount: '5', monthlyDiscount: '10', minimumStay: 1, checkIn: '15:00', checkOut: '11:00', cancellation: 'Flexible', amenities: ['Wi-Fi', 'Aire acondicionado', 'TV'], category: 'Hotel', roomsLabel: '3 habitaciones', ratingLabel: '3 estrellas',
-  },
-  '2': {
-    id: '2', name: 'Hotel Plaza', type: 'Hotel', status: 'Pausado', location: 'Equipetrol, Santa Cruz', country: 'Bolivia', city: 'Santa Cruz de la Sierra', neighborhood: 'Equipetrol', address: 'Equipetrol, Santa Cruz de la Sierra', description: 'Hotel moderno en Equipetrol con amplias instalaciones y atención de primera.', photos: ['https://images.pexels.com/photos/7031731/pexels-photo-7031731.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'], guests: 3, beds: 2, bathrooms: 1, bedrooms: 1, price: '220', weeklyDiscount: '8', monthlyDiscount: '12', minimumStay: 1, checkIn: '15:00', checkOut: '11:00', cancellation: 'Moderada', amenities: ['Wi-Fi', 'Aire acondicionado', 'Estacionamiento', 'TV'], category: 'Hotel', roomsLabel: '5 habitaciones', ratingLabel: '4 estrellas',
-  },
-  '3': {
-    id: '3', name: 'Casa moderna', type: 'Casa completa', status: 'Pendiente', location: 'Urbarí, Santa Cruz', country: 'Bolivia', city: 'Santa Cruz de la Sierra', neighborhood: 'Urbarí', address: 'Urbarí, Santa Cruz de la Sierra', description: 'Una casa amplia y luminosa, ideal para familias y grupos que buscan comodidad en Santa Cruz.', photos: ['https://images.pexels.com/photos/7746082/pexels-photo-7746082.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', 'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'], guests: 4, beds: 3, bathrooms: 2, bedrooms: 2, price: '350', weeklyDiscount: '10', monthlyDiscount: '20', minimumStay: 2, checkIn: '15:00', checkOut: '11:00', cancellation: 'Moderada', amenities: ['Wi-Fi', 'Cocina equipada', 'Estacionamiento', 'TV'], category: 'Casa', roomsLabel: '1 unidad', ratingLabel: 'Casa completa',
-  },
-  '4': {
-    id: '4', name: 'Departamento céntrico', type: 'Departamento completo', status: 'Rechazado', location: 'Sopocachi, La Paz', country: 'Bolivia', city: 'La Paz', neighborhood: 'Sopocachi', address: 'Sopocachi, La Paz', description: 'Departamento céntrico con espacios cómodos y todo lo necesario para una estadía práctica.', photos: ['https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', 'https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'], guests: 2, beds: 1, bathrooms: 1, bedrooms: 1, price: '250', weeklyDiscount: '5', monthlyDiscount: '15', minimumStay: 1, checkIn: '15:00', checkOut: '11:00', cancellation: 'Flexible', amenities: ['Wi-Fi', 'Aire acondicionado', 'TV'], category: 'Departamento', roomsLabel: '1 unidad', ratingLabel: 'Departamento',
-  },
-};
+function textOrEmpty(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value.trim();
+}
+
+function mapEstadoApi(estado: string): ListingStatus {
+  const value = estado.toUpperCase();
+  if (value === 'PUBLICADO') return 'Publicado';
+  if (value === 'ACTIVO') return 'Activo';
+  if (value === 'RECHAZADO') return 'Rechazado';
+  if (value === 'PAUSADO' || value === 'DESACTIVADO') return 'Pausado';
+  if (value === 'SUSPENDIDO') return 'Pausado';
+  if (value === 'BORRADOR') return 'Borrador';
+  // EN_REVISION (y equivalentes)
+  return 'En revisión';
+}
+
+function mapCategoryFromTipo(tipoPropiedad: string): DetailListing['category'] {
+  const value = tipoPropiedad.toLowerCase();
+  if (value.includes('departamento')) return 'Departamento';
+  if (value.includes('hotel')) return 'Hotel';
+  if (value.includes('hostal')) return 'Hostal';
+  return 'Casa';
+}
+
+function parseCancellation(politicas: string | null | undefined): string {
+  if (!politicas) return 'Moderada';
+  const match = politicas.match(/cancelaci[oó]n:\s*(Flexible|Moderada|Estricta)/i);
+  return match?.[1] ?? 'Moderada';
+}
+
+function mapUnit(unidad: UnidadAlojamiento): DetailUnit {
+  const photo = [...(unidad.fotografias ?? [])]
+    .sort((a, b) => a.orden - b.orden)
+    .map((foto) => foto.url)
+    .find(Boolean);
+
+  return {
+    id: unidad.id,
+    name: textOrEmpty(unidad.nombre) || 'Unidad',
+    capacity: unidad.capacidadHuespedes ?? 0,
+    bedrooms: unidad.cantidadDormitorios ?? 0,
+    beds: unidad.cantidadCamas ?? 0,
+    bathrooms: Number(unidad.cantidadBanos ?? 0),
+    inventory: Math.max(1, unidad.inventarioTotal ?? 1),
+    price: unidad.precioNoche != null ? String(unidad.precioNoche) : '',
+    status: textOrEmpty(unidad.estado) || 'ACTIVA',
+    photo,
+    description: textOrEmpty(unidad.descripcion),
+  };
+}
 
 export function toWizardData(listing: DetailListing): ListingWizardData {
   return {
-    type: listing.category, name: listing.name, description: listing.description, country: listing.country as 'Bolivia', city: listing.city, address: listing.address, neighborhood: listing.neighborhood, amenities: [...listing.amenities], guests: listing.guests, bedrooms: listing.bedrooms, beds: listing.beds, bathrooms: listing.bathrooms, bathroomType: 'Privado', bedTypes: ['Cama matrimonial'], nightlyPrice: listing.price, weeklyDiscount: listing.weeklyDiscount, monthlyDiscount: listing.monthlyDiscount, minimumStay: listing.minimumStay, checkIn: listing.checkIn, checkOut: listing.checkOut, cancellation: listing.cancellation as ListingWizardData['cancellation'], stayConditions: listing.stayConditions ?? '', photos: listing.photos.map((url, index) => ({ id: `existing-${index}`, name: `Fotografía ${index + 1}`, url })), coverPhotoId: 'existing-0',
+    type: listing.category,
+    tipoPropiedadId: null,
+    name: listing.name,
+    description: listing.description,
+    country: listing.country as 'Bolivia',
+    city: listing.city,
+    address: listing.address,
+    neighborhood: listing.neighborhood,
+    latitude: listing.latitude ?? null,
+    longitude: listing.longitude ?? null,
+    servicioIds: [...(listing.servicioIds ?? [])],
+    guests: listing.guests,
+    bedrooms: listing.bedrooms,
+    beds: listing.beds,
+    bathrooms: listing.bathrooms,
+    bathroomType: 'Privado',
+    bedTypes: ['Cama matrimonial'],
+    nightlyPrice: listing.price,
+    weeklyDiscount: listing.weeklyDiscount,
+    monthlyDiscount: listing.monthlyDiscount,
+    minimumStay: listing.minimumStay,
+    checkIn: listing.checkIn === '—' ? '15:00' : listing.checkIn,
+    checkOut: listing.checkOut === '—' ? '11:00' : listing.checkOut,
+    cancellation: listing.cancellation as ListingWizardData['cancellation'],
+    stayConditions: listing.stayConditions ?? '',
+    photos: listing.photos.map((url, index) => ({
+      id: `existing-${index}`,
+      name: `Fotografía ${index + 1}`,
+      url,
+    })),
+    coverPhotoId: listing.photos.length ? 'existing-0' : '',
   };
 }
 
-export function fromWizard(data: ListingWizardData, id: string, category: DetailListing['category']): DetailListing {
-  const cover = data.photos.find((photo) => photo.id === data.coverPhotoId) || data.photos[0];
-  const typeLabel = category === 'Casa' ? 'Casa completa' : category === 'Departamento' ? 'Departamento completo' : category;
+/** Adapta GET /alojamientos (resumen) a la tarjeta de "Mis alojamientos". */
+export function fromAlojamientoResumen(resumen: AlojamientoResumen): DetailListing {
+  const category = mapCategoryFromTipo(resumen.tipoPropiedad || '');
+  const city = textOrEmpty(resumen.ciudad);
+  const departamento = textOrEmpty(resumen.departamento);
+  const typeLabel = textOrEmpty(resumen.tipoPropiedad) || category;
+
   return {
-    id, name: data.name || 'Alojamiento sin nombre', type: typeLabel, status: 'Pendiente', location: data.neighborhood ? `${data.neighborhood}, ${data.city}` : data.city, country: data.country, city: data.city, neighborhood: data.neighborhood, address: data.address, description: data.description, photos: cover ? [cover.url, ...data.photos.filter((photo) => photo.id !== cover.id).map((photo) => photo.url)] : [], guests: data.guests, beds: data.beds, bathrooms: data.bathrooms, bedrooms: data.bedrooms, price: data.nightlyPrice, weeklyDiscount: data.weeklyDiscount, monthlyDiscount: data.monthlyDiscount, stayConditions: data.stayConditions, minimumStay: data.minimumStay, checkIn: data.checkIn, checkOut: data.checkOut, cancellation: data.cancellation, amenities: data.amenities, category, roomsLabel: category === 'Casa' || category === 'Departamento' ? '1 unidad' : '1 habitación', ratingLabel: typeLabel,
+    id: resumen.id,
+    name: textOrEmpty(resumen.titulo) || 'Alojamiento sin nombre',
+    type: typeLabel,
+    status: mapEstadoApi(resumen.estado || ''),
+    location: [city, departamento].filter(Boolean).join(', ') || 'Bolivia',
+    country: 'Bolivia',
+    city,
+    neighborhood: departamento,
+    address: '',
+    description: '',
+    photos: textOrEmpty(resumen.fotoPortada) ? [textOrEmpty(resumen.fotoPortada)] : [],
+    photoItems: [],
+    guests: 0,
+    beds: 0,
+    bathrooms: 0,
+    bedrooms: 0,
+    price: '',
+    weeklyDiscount: '',
+    monthlyDiscount: '',
+    minimumStay: 1,
+    checkIn: '—',
+    checkOut: '—',
+    cancellation: 'Moderada',
+    amenities: [],
+    servicioIds: [],
+    category,
+    roomsLabel:
+      category === 'Casa' || category === 'Departamento' ? '1 unidad' : 'Establecimiento',
+    ratingLabel: typeLabel,
+    departamento,
+    estadoApi: resumen.estado,
+    units: [],
   };
 }
 
-export function getListingById(id: string, savedListing?: { id: string; data: ListingWizardData } | null): DetailListing | undefined {
-  if (savedListing && id === savedListing.id) {
-    const base = staticListings[id];
-    const savedCategory = savedListing.data.type || 'Casa';
-    return fromWizard(savedListing.data, id, base?.category ?? savedCategory);
-  }
-  return staticListings[id];
+/** Adapta GET /alojamientos/{id} a la UI de detalle. */
+export function fromAlojamientoDetalle(detalle: AlojamientoDetalle): DetailListing {
+  const unidad = detalle.unidades?.[0];
+  const units = (detalle.unidades ?? []).map(mapUnit);
+  const category = mapCategoryFromTipo(detalle.tipoPropiedad || '');
+  const city = textOrEmpty(detalle.ciudad);
+  const departamento = textOrEmpty(detalle.departamento);
+  const photoItems: DetailPhoto[] = [...(detalle.fotografias ?? [])]
+    .sort((a, b) => a.orden - b.orden)
+    .filter((foto) => !!foto.url)
+    .map((foto) => ({
+      id: foto.id,
+      identificadorAlmacen: foto.identificadorAlmacen,
+      url: foto.url,
+      orden: foto.orden,
+    }));
+  const photos = photoItems.map((foto) => foto.url);
+
+  const name =
+    textOrEmpty(detalle.titulo) || textOrEmpty(unidad?.nombre) || 'Alojamiento sin nombre';
+  const description =
+    textOrEmpty(detalle.descripcion) || textOrEmpty(unidad?.descripcion);
+
+  const typeLabel =
+    category === 'Casa'
+      ? 'Casa completa'
+      : category === 'Departamento'
+        ? 'Departamento completo'
+        : textOrEmpty(detalle.tipoPropiedad) || category;
+
+  return {
+    id: detalle.id,
+    name,
+    type: typeLabel,
+    status: mapEstadoApi(detalle.estado || ''),
+    location:
+      [textOrEmpty(detalle.direccion), city, departamento].filter(Boolean).join(', ') ||
+      city ||
+      'Bolivia',
+    country: 'Bolivia',
+    city,
+    neighborhood: departamento,
+    address: textOrEmpty(detalle.direccion),
+    description,
+    photos,
+    photoItems,
+    guests: unidad?.capacidadHuespedes ?? 0,
+    beds: unidad?.cantidadCamas ?? 0,
+    bathrooms: Number(unidad?.cantidadBanos ?? 0),
+    bedrooms: unidad?.cantidadDormitorios ?? 0,
+    price: unidad?.precioNoche != null ? String(unidad.precioNoche) : '',
+    weeklyDiscount: '',
+    monthlyDiscount: '',
+    minimumStay: 1,
+    checkIn: textOrEmpty(detalle.horarioEntrada) || '—',
+    checkOut: textOrEmpty(detalle.horarioSalida) || '—',
+    cancellation: parseCancellation(detalle.politicas),
+    stayConditions: textOrEmpty(detalle.politicas),
+    amenities: (detalle.servicios ?? []).map((servicio) => servicio.nombre),
+    servicioIds: (detalle.servicios ?? []).map((servicio) => servicio.id),
+    category,
+    roomsLabel:
+      category === 'Casa' || category === 'Departamento'
+        ? '1 unidad'
+        : `${units.length} habitaciones`,
+    ratingLabel: typeLabel,
+    latitude: detalle.latitud != null ? Number(detalle.latitud) : null,
+    longitude: detalle.longitud != null ? Number(detalle.longitud) : null,
+    departamento,
+    estadoApi: detalle.estado,
+    politicas: detalle.politicas,
+    units,
+  };
 }

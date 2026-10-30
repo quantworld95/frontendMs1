@@ -17,8 +17,8 @@ export function AppHeader({ hostName = 'Anfitrión demo', onLogout }: AppHeaderP
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-surface-base/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-8">
+      <div className="flex h-16 w-full items-center justify-between px-5 sm:px-8 lg:px-12">
+        <div className="flex shrink-0 items-center gap-8">
           <Link to="/host" className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary text-white">
               <Home className="h-5 w-5" />
@@ -46,7 +46,7 @@ export function AppHeader({ hostName = 'Anfitrión demo', onLogout }: AppHeaderP
           </nav>
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden shrink-0 md:flex items-center gap-3">
           <span className="text-sm text-ink-secondary">{hostName}</span>
           <button
             onClick={onLogout}
@@ -58,7 +58,7 @@ export function AppHeader({ hostName = 'Anfitrión demo', onLogout }: AppHeaderP
         </div>
 
         <button
-          className="md:hidden inline-flex items-center justify-center rounded-lg p-2 text-ink-secondary hover:bg-surface-secondary"
+          className="md:hidden inline-flex shrink-0 items-center justify-center rounded-lg p-2 text-ink-secondary hover:bg-surface-secondary"
           onClick={() => setOpen((v) => !v)}
           aria-label="Menú"
         >
@@ -67,7 +67,7 @@ export function AppHeader({ hostName = 'Anfitrión demo', onLogout }: AppHeaderP
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-line bg-surface-base px-4 py-3 space-y-1">
+        <div className="md:hidden border-t border-line bg-surface-base px-5 py-3 space-y-1 sm:px-8 lg:px-12">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
